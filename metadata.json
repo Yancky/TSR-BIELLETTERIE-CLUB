@@ -1,0 +1,8 @@
+{
+  "name": "Remix TSR TRANSIT",
+  "description": "Plateforme officielle de réservation de billets de transport interurbain, billetterie électronique et gestion de compagnies au Burkina Faso.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

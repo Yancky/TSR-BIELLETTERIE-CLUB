@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "users": {
+      "title": "UserProfile",
+      "description": "User profile with role, contact details, and preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "fullName": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 25 },
+        "email": { "type": "string", "maxLength": 120 },
+        "role": { "type": "string", "enum": ["TRAVELER", "COMPANY_AGENT", "ADMIN"], "maxLength": 30 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["uid", "fullName", "phone", "role"]
+    },
+    "bookings": {
+      "title": "BookingTicket",
+      "description": "Passenger ticket reservation record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "passengerName": { "type": "string", "maxLength": 100 },
+        "passengerPhone": { "type": "string", "maxLength": 25 },
+        "tripId": { "type": "string", "maxLength": 128 },
+        "departureCity": { "type": "string", "maxLength": 60 },
+        "arrivalCity": { "type": "string", "maxLength": 60 },
+        "seatNumber": { "type": "number" },
+        "amountPaid": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["ORANGE_MONEY", "MOOV_MONEY", "CASH"], "maxLength": 30 },
+        "paymentStatus": { "type": "string", "enum": ["PENDING", "CONFIRMED", "CANCELLED"], "maxLength": 30 },
+        "qrCodeData": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "userId", "passengerName", "departureCity", "arrivalCity", "seatNumber", "amountPaid", "paymentStatus"]
+    },
+    "trips": {
+      "title": "TripSchedule",
+      "description": "Scheduled bus route departures.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "departureCity": { "type": "string", "maxLength": 60 },
+        "arrivalCity": { "type": "string", "maxLength": 60 },
+        "departureDate": { "type": "string", "maxLength": 20 },
+        "departureTime": { "type": "string", "maxLength": 10 },
+        "companyName": { "type": "string", "maxLength": 60 },
+        "price": { "type": "number" },
+        "totalSeats": { "type": "number" },
+        "availableSeats": { "type": "number" },
+        "status": { "type": "string", "enum": ["SCHEDULED", "BOARDING", "DEPARTED", "CANCELLED"], "maxLength": 30 }
+      },
+      "required": ["id", "departureCity", "arrivalCity", "departureTime", "price", "availableSeats", "status"]
+    },
+    "parcels": {
+      "title": "ParcelTracking",
+      "description": "Luggage and parcel freight shipment details.",
+      "type": "object",
+      "properties": {
+        "trackingCode": { "type": "string", "maxLength": 40 },
+        "senderName": { "type": "string", "maxLength": 100 },
+        "senderPhone": { "type": "string", "maxLength": 25 },
+        "recipientName": { "type": "string", "maxLength": 100 },
+        "recipientPhone": { "type": "string", "maxLength": 25 },
+        "originCity": { "type": "string", "maxLength": 60 },
+        "destinationCity": { "type": "string", "maxLength": 60 },
+        "weightKg": { "type": "number" },
+        "feeFcfa": { "type": "number" },
+        "status": { "type": "string", "enum": ["REGISTERED", "IN_TRANSIT", "ARRIVED", "DELIVERED"], "maxLength": 30 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["trackingCode", "senderName", "recipientName", "originCity", "destinationCity", "feeFcfa", "status"]
+    },
+    "claims": {
+      "title": "SupportClaim",
+      "description": "User customer service complaints and luggage lost/found claims.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "claimType": { "type": "string", "enum": ["LOST_LUGGAGE", "DELAY", "REFUND", "SERVICE", "OTHER"], "maxLength": 30 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "contactPhone": { "type": "string", "maxLength": 25 },
+        "status": { "type": "string", "enum": ["OPEN", "IN_REVIEW", "RESOLVED"], "maxLength": 30 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "userId", "claimType", "description", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/users" },
+      "description": "Individual user profiles indexed by user ID."
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/bookings" },
+      "description": "Electronic ticket bookings indexed by booking ID."
+    },
+    "/trips/{tripId}": {
+      "schema": { "$ref": "#/entities/trips" },
+      "description": "Bus departures and scheduling."
+    },
+    "/parcels/{parcelId}": {
+      "schema": { "$ref": "#/entities/parcels" },
+      "description": "Freight and package shipping trackings."
+    },
+    "/claims/{claimId}": {
+      "schema": { "$ref": "#/entities/claims" },
+      "description": "Support tickets and lost item claim declarations."
+    }
+  }
+}
