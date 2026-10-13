@@ -410,6 +410,9 @@ export interface PaymentTransaction {
   initiatedAt: string;
   confirmedAt?: string;
   failureReason?: string;
+  commissionRatePercent?: number; // Ex: 2.5%
+  commissionAmountXOF?: number;   // Ex: 225 XOF
+  netCompanyAmountXOF?: number;   // Ex: 8775 XOF
 }
 
 // ==========================================
@@ -702,6 +705,9 @@ export interface ParcelShipment {
   shippingFeeXOF: number;
   status: ParcelStatus;
   pickupOtpCode: string; // Code secret à 4 chiffres fourni au destinataire
+  otpExpiresAt?: string; // Date d'expiration de l'OTP (par défaut J+7)
+  failedOtpAttempts?: number; // Nombre de tentatives OTP erronées (max 3)
+  isLocked?: boolean; // Verrouillage de sécurité en cas de brute-force
   assignedTripId?: string;
   createdAt: string;
   updatedAt: string;

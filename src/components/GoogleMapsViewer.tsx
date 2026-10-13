@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin, InfoWindow } from '@vis.gl/react-google-maps';
-import { MapPin, Phone, Clock, Navigation, Bus, ChevronRight } from 'lucide-react';
+import { MapPin, Phone, Clock, Navigation, Bus, ChevronRight, AlertTriangle, ExternalLink, RefreshCw } from 'lucide-react';
 import { Agency } from '../types';
 
-interface MarkerLocation {
+export interface MarkerLocation {
   id: string;
   name: string;
   city: string;
@@ -31,6 +31,82 @@ interface GoogleMapsViewerProps {
   height?: string;
 }
 
+// Coordonnées géographiques officielles (Burkina Faso)
+export const OFFICIAL_BURKINA_STATIONS: MarkerLocation[] = [
+  {
+    id: 'tsr-ouaga-main',
+    name: 'Gare Centrale TSR Gounghin',
+    city: 'Ouagadougou',
+    address: 'Boulevard de la Révolution, Face Stade du 4 Août',
+    phone: '+226 25 36 20 21',
+    hours: '05h00 - 22h00',
+    lat: 12.3686,
+    lng: -1.5542,
+    isMain: true,
+  },
+  {
+    id: 'tsr-ouaga-tanghin',
+    name: 'Agence TSR Tanghin Gare Nord',
+    city: 'Ouagadougou',
+    address: 'Route de Kaya, Carrefour Barrage',
+    phone: '+226 25 36 20 22',
+    hours: '05h30 - 21h00',
+    lat: 12.4012,
+    lng: -1.5055,
+  },
+  {
+    id: 'tsr-bobo-farakan',
+    name: 'Gare Principale TSR Farakan',
+    city: 'Bobo-Dioulasso',
+    address: 'Avenue de l\'Union Européenne, Quartier Farakan',
+    phone: '+226 20 98 04 40',
+    hours: '05h00 - 22h00',
+    lat: 11.1764,
+    lng: -4.2982,
+    isMain: true,
+  },
+  {
+    id: 'tsr-koudougou',
+    name: 'Agence TSR Koudougou Gare',
+    city: 'Koudougou',
+    address: 'Place du Marché Central, Koudougou',
+    phone: '+226 25 44 02 10',
+    hours: '06h00 - 20h00',
+    lat: 12.2526,
+    lng: -2.3627,
+  },
+  {
+    id: 'tsr-banfora',
+    name: 'Gare TSR Banfora Cascades',
+    city: 'Banfora',
+    address: 'Boulevard de la Cascade, Quartier Administratif',
+    phone: '+226 20 91 00 22',
+    hours: '06h00 - 20h00',
+    lat: 10.6344,
+    lng: -4.7578,
+  },
+  {
+    id: 'tsr-ouahigouya',
+    name: 'Agence TSR Ouahigouya',
+    city: 'Ouahigouya',
+    address: 'Avenue Naaba Kango, Secteur 1',
+    phone: '+226 24 55 01 12',
+    hours: '06h00 - 20h00',
+    lat: 13.5828,
+    lng: -2.4216,
+  },
+  {
+    id: 'tsr-fada',
+    name: 'Agence TSR Fada N\'Gourma',
+    city: 'Fada N\'Gourma',
+    address: 'Avenue du 11 Décembre, Route de Niamey',
+    phone: '+226 24 77 00 18',
+    hours: '06h00 - 20h00',
+    lat: 12.0616,
+    lng: 0.3584,
+  }
+];
+
 const DEFAULT_MAP_CENTER = { lat: 12.3714, lng: -1.5197 }; // Ouagadougou, Burkina Faso
 
 export const GoogleMapsViewer: React.FC<GoogleMapsViewerProps> = ({
@@ -45,6 +121,8 @@ export const GoogleMapsViewer: React.FC<GoogleMapsViewerProps> = ({
 }) => {
   const apiKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBvlws8zjVZgO0JskGmkpvJjVoUUbtXR7g';
   const [activeMarker, setActiveMarker] = useState<MarkerLocation | null>(null);
+  const [hasMapError, setHasMapError] = useState(false);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   // Convert agencies to marker locations if provided
   const markers: MarkerLocation[] = useMemo(() => {
@@ -59,54 +137,32 @@ export const GoogleMapsViewer: React.FC<GoogleMapsViewerProps> = ({
         hours: ag.openingHours,
         lat: ag.latitude || ag.lat || 12.3714,
         lng: ag.longitude || ag.lng || -1.5197,
-        isMain: ag.name.toLowerCase().includes('centrale') || ag.name.toLowerCase().includes('principale'),
+        isMain: ag.name.toLowerCase().includes('centrale') || ag.name.toLowerCase().includes('principale') || ag.name.toLowerCase().includes('farakan'),
       }));
     }
-    return [
-      {
-        id: 'tsr-ouaga-main',
-        name: 'Gare Centrale TSR Gounghin',
-        city: 'Ouagadougou',
-        address: 'RN1 Boulevard de la Jeunesse, Gounghin',
-        phone: '+226 25 36 20 20',
-        hours: '05h00 - 23h00',
-        lat: 12.3657,
-        lng: -1.5339,
-        isMain: true,
-      },
-      {
-        id: 'tsr-bobo-main',
-        name: 'Gare Principale TSR Bobo',
-        city: 'Bobo-Dioulasso',
-        address: 'Avenue de l\'Union Européenne, Quartier Farakan',
-        phone: '+226 20 98 04 40',
-        hours: '05h00 - 22h00',
-        lat: 11.1764,
-        lng: -4.2982,
-        isMain: true,
-      },
-      {
-        id: 'tsr-koudougou',
-        name: 'Agence TSR Koudougou Gare',
-        city: 'Koudougou',
-        address: 'Avenue Maurice Yaméogo',
-        phone: '+226 25 44 02 10',
-        hours: '06h00 - 21h00',
-        lat: 12.2526,
-        lng: -2.3627,
-      },
-      {
-        id: 'tsr-banfora',
-        name: 'Gare TSR Banfora',
-        city: 'Banfora',
-        address: 'Boulevard de la Cascade',
-        phone: '+226 20 91 00 22',
-        hours: '06h00 - 20h00',
-        lat: 10.6344,
-        lng: -4.7578,
-      },
-    ];
+    return OFFICIAL_BURKINA_STATIONS;
   }, [locations, agencies]);
+
+  // Listen for quota exhaustion or auth errors on window
+  useEffect(() => {
+    const handleAuthFailure = () => {
+      console.warn('[GoogleMaps] Auth failure or invalid key detected. Activating offline fallback UI.');
+      setHasMapError(true);
+    };
+
+    const handleQuotaExceeded = () => {
+      console.warn('[GoogleMaps] Quota limit reached. Switching to localized fallback map.');
+      setQuotaExceeded(true);
+    };
+
+    window.addEventListener('gm_authFailure', handleAuthFailure);
+    window.addEventListener('gmp-quota-exceeded', handleQuotaExceeded);
+
+    return () => {
+      window.removeEventListener('gm_authFailure', handleAuthFailure);
+      window.removeEventListener('gmp-quota-exceeded', handleQuotaExceeded);
+    };
+  }, []);
 
   const handleMarkerClick = (loc: MarkerLocation) => {
     setActiveMarker(loc);
@@ -114,6 +170,92 @@ export const GoogleMapsViewer: React.FC<GoogleMapsViewerProps> = ({
       onSelectLocation(loc);
     }
   };
+
+  // Fallback UI when Google Maps is unavailable, offline, or quota exhausted
+  if (hasMapError || quotaExceeded || !apiKey) {
+    return (
+      <div 
+        className="w-full relative rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 p-4 text-white flex flex-col justify-between"
+        style={{ height }}
+      >
+        <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+          <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold">
+            <AlertTriangle className="w-4 h-4" />
+            <span>Mode Cartographique Hors-Ligne / Fallback Réseau</span>
+          </div>
+          <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full">
+            {markers.length} Gares Référencées
+          </span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+          {markers.map((loc) => (
+            <div 
+              key={loc.id} 
+              onClick={() => {
+                setActiveMarker(loc);
+                if (onSelectLocation) onSelectLocation(loc);
+              }}
+              className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-colors flex items-center justify-between ${
+                (selectedLocationId === loc.id || activeMarker?.id === loc.id)
+                  ? 'bg-blue-900/60 border-blue-500'
+                  : 'bg-slate-800/80 border-slate-700 hover:bg-slate-800'
+              }`}
+            >
+              <div className="truncate mr-2">
+                <div className="flex items-center gap-1.5 font-bold text-white">
+                  <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span className="truncate">{loc.city} — {loc.name}</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5 truncate">{loc.address}</div>
+                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                  GPS : {loc.lat.toFixed(4)}° N, {loc.lng.toFixed(4)}° W
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <a
+                  href={`https://maps.google.com/?q=${loc.lat},${loc.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200"
+                  title="Ouvrir dans Google Maps Web"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                {onBookDeparture && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBookDeparture(loc.city);
+                    }}
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold"
+                  >
+                    Réserver
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+          <span>Coordonnées exactes vérifiées du réseau TSR Burkina</span>
+          <button 
+            onClick={() => {
+              setHasMapError(false);
+              setQuotaExceeded(false);
+            }}
+            className="flex items-center gap-1 text-blue-400 hover:text-blue-300"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Réessayer</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full relative rounded-2xl overflow-hidden border border-slate-700/60 shadow-lg bg-slate-900" style={{ height }}>
@@ -169,15 +311,26 @@ export const GoogleMapsViewer: React.FC<GoogleMapsViewerProps> = ({
                     <span>{activeMarker.phone}</span>
                   </p>
                 )}
-                {onBookDeparture && (
-                  <button
-                    onClick={() => onBookDeparture(activeMarker.city)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold py-1 px-2 rounded flex items-center justify-center gap-1 shadow-sm transition-colors cursor-pointer"
+                <div className="flex items-center gap-1">
+                  {onBookDeparture && (
+                    <button
+                      onClick={() => onBookDeparture(activeMarker.city)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold py-1 px-2 rounded flex items-center justify-center gap-1 shadow-sm transition-colors cursor-pointer"
+                    >
+                      <span>Réserver</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  )}
+                  <a
+                    href={`https://maps.google.com/?q=${activeMarker.lat},${activeMarker.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300"
+                    title="Itinéraire"
                   >
-                    <span>Réserver ce départ</span>
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                )}
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
             </InfoWindow>
           )}

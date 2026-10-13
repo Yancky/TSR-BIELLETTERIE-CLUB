@@ -133,6 +133,27 @@ export const Screen21Settings: React.FC = () => {
           </div>
         </div>
 
+        {/* Android App & APK Installation */}
+        <div className="bg-gradient-to-r from-blue-900 to-[#0F2C59] text-white rounded-2xl p-4 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-bold">
+                <Smartphone className="w-4 h-4 text-slate-950" />
+              </div>
+              <div>
+                <span className="font-bold text-xs block text-white">Application Android & APK</span>
+                <span className="text-[10px] text-blue-200">Installation WebAPK &amp; Fichier .APK</span>
+              </div>
+            </div>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-android-apk-modal'))}
+              className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+            >
+              Installer / APK
+            </button>
+          </div>
+        </div>
+
         {/* Legal & Storage */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100 text-xs">
           <button

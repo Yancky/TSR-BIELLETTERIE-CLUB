@@ -151,7 +151,7 @@ export const GeminiChatbotModal: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-[11px] text-blue-200 mt-0.5 flex items-center gap-1">
-                  <span>Gemini 3.5 Flash</span>
+                  <span>Gemini 3.8 Flash</span>
                   <span>•</span>
                   <span className="text-amber-300 font-medium">Google Search Grounding</span>
                 </p>

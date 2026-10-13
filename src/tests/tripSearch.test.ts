@@ -7,6 +7,7 @@ import assert from 'node:assert';
 import { TripSearchService } from '../services/tripSearchService';
 import { TripService } from '../services/tripService';
 import { CompanyService } from '../services/companyService';
+import { TODAY_DATE_STR } from '../services/mockData';
 import { User } from '../types';
 
 export function runTripSearchTests(): { passed: number; failed: number; tests: string[] } {
@@ -22,7 +23,7 @@ export function runTripSearchTests(): { passed: number; failed: number; tests: s
     const res = TripSearchService.search({
       originCity: 'Ouagadougou',
       destinationCity: 'Bobo-Dioulasso',
-      departureDate: '2026-10-11',
+      departureDate: TODAY_DATE_STR,
       passengerCount: 1,
       sortBy: 'PRICE_ASC'
     });
@@ -44,7 +45,7 @@ export function runTripSearchTests(): { passed: number; failed: number; tests: s
       TripSearchService.search({
         originCity: 'Ouagadougou',
         destinationCity: 'Ouagadougou',
-        departureDate: '2026-10-11',
+        departureDate: TODAY_DATE_STR,
         passengerCount: 1
       });
     }, /distinctes/i);
@@ -78,7 +79,7 @@ export function runTripSearchTests(): { passed: number; failed: number; tests: s
       TripSearchService.search({
         originCity: 'Ouagadougou',
         destinationCity: 'Bobo-Dioulasso',
-        departureDate: '2026-10-11',
+        departureDate: TODAY_DATE_STR,
         passengerCount: 0
       });
     }, /au moins 1/i);
@@ -87,7 +88,7 @@ export function runTripSearchTests(): { passed: number; failed: number; tests: s
       TripSearchService.search({
         originCity: 'Ouagadougou',
         destinationCity: 'Bobo-Dioulasso',
-        departureDate: '2026-10-11',
+        departureDate: TODAY_DATE_STR,
         passengerCount: 25 // Dépasse limite max
       });
     }, /dépasser la limite/i);
@@ -118,7 +119,7 @@ export function runTripSearchTests(): { passed: number; failed: number; tests: s
     const searchRes = TripSearchService.search({
       originCity: 'Ouagadougou',
       destinationCity: 'Bobo-Dioulasso',
-      departureDate: '2026-10-11',
+      departureDate: TODAY_DATE_STR,
       passengerCount: 1
     });
 
@@ -166,7 +167,7 @@ export function runTripSearchTests(): { passed: number; failed: number; tests: s
     const sortedByPrice = TripSearchService.search({
       originCity: 'Ouagadougou',
       destinationCity: 'Bobo-Dioulasso',
-      departureDate: '2026-10-11',
+      departureDate: TODAY_DATE_STR,
       passengerCount: 1,
       sortBy: 'PRICE_ASC'
     });
@@ -181,7 +182,7 @@ export function runTripSearchTests(): { passed: number; failed: number; tests: s
     const sortedByTime = TripSearchService.search({
       originCity: 'Ouagadougou',
       destinationCity: 'Bobo-Dioulasso',
-      departureDate: '2026-10-11',
+      departureDate: TODAY_DATE_STR,
       passengerCount: 1,
       sortBy: 'TIME_ASC'
     });

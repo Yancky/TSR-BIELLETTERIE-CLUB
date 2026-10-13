@@ -7,7 +7,7 @@ import {
   Search, Building2, UserPlus, LogIn, MapPin, 
   ShieldCheck, Clock, Bus, CheckCircle2, FileText, 
   ChevronRight, ArrowUpDown, Phone, MessageSquare, AlertCircle,
-  Calendar, Package, Luggage, HelpCircle, Award, BarChart3, Sparkles
+  Calendar, Package, Luggage, HelpCircle, Award, BarChart3, Sparkles, Smartphone
 } from 'lucide-react';
 
 export const Screen02PublicHome: React.FC = () => {
@@ -125,10 +125,27 @@ export const Screen02PublicHome: React.FC = () => {
               <HelpCircle className="w-3.5 h-3.5 text-blue-300" />
               <span>Aide &amp; FAQ (30)</span>
             </button>
+            <button
+              onClick={() => appStore.navigateTo('17_ADMIN_DASHBOARD')}
+              className="hover:text-amber-300 transition-colors flex items-center gap-1 text-amber-300 font-bold"
+              title="Super Admin Dashboard (Écran 17)"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>Admin (17)</span>
+            </button>
           </nav>
 
-          {/* Auth Actions */}
+          {/* Auth & Android Actions */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-android-apk-modal'))}
+              className="px-2.5 sm:px-3 py-1.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+              title="Installer sur Android / Obtenir le fichier APK"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-slate-950" />
+              <span className="hidden xs:inline sm:inline">App Android</span>
+              <span className="bg-slate-950 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded font-extrabold">APK</span>
+            </button>
             <button
               onClick={() => appStore.navigateTo('03_LOGIN')}
               className="px-3 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors flex items-center gap-1.5"
@@ -270,14 +287,21 @@ export const Screen02PublicHome: React.FC = () => {
             </form>
           </div>
 
-          {/* Bouton d'enregistrement visible exigé par le cahier des charges */}
-          <div className="pt-2 flex justify-center">
+          {/* Actions rapides Hero : Société et App Android */}
+          <div className="pt-2 flex flex-wrap justify-center gap-3">
             <button
               onClick={() => setShowRegModal(true)}
-              className="py-3 px-6 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-xs border border-white/30 backdrop-blur-md flex items-center gap-2 shadow-lg transition-all active:scale-95"
+              className="py-3 px-5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-xs border border-white/30 backdrop-blur-md flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer"
             >
               <Building2 className="w-4 h-4 text-amber-300" />
               <span>ENREGISTRER UNE SOCIÉTÉ DE TRANSPORT</span>
+            </button>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-android-apk-modal'))}
+              className="py-3 px-5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-2xl text-xs flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer"
+            >
+              <Smartphone className="w-4 h-4 text-slate-950" />
+              <span>INSTALLER L'APPLICATION ANDROID (APK)</span>
             </button>
           </div>
         </div>

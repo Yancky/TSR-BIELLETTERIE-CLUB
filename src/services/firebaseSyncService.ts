@@ -4,7 +4,7 @@
  */
 
 import { 
-  collection, doc, setDoc, query, where, onSnapshot 
+  collection, doc, setDoc, query, where, onSnapshot, Unsubscribe 
 } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase.ts';
 import { ElectronicTicket, ParcelShipment, SupportClaim } from '../types/index.ts';
@@ -12,6 +12,7 @@ import { appStore } from './store.ts';
 
 export class FirebaseSyncService {
   private static isInitialized = false;
+  private static activeUnsubscribers: Map<string, Unsubscribe> = new Map();
 
   /**
    * Initialize real-time synchronization with Firestore
@@ -23,19 +24,31 @@ export class FirebaseSyncService {
     // Listen to Firebase auth state changes
     auth.onAuthStateChanged((user) => {
       if (user) {
-        this.syncUserTickets(user.uid);
+        this.subscribeUserTickets(user.uid);
+      } else {
+        this.unsubscribeAll();
       }
     });
   }
 
   /**
-   * Listen to user's tickets in Firestore and sync with local store
+   * Listen to user's tickets in Firestore and sync with local store.
+   * Returns an unsubscribe function to guarantee clean teardown.
    */
-  public static syncUserTickets(userId: string) {
+  public static subscribeUserTickets(
+    userId: string, 
+    onUpdateCallback?: (tickets: ElectronicTicket[]) => void
+  ): () => void {
+    // If a listener already exists for this user, clean it up first
+    if (this.activeUnsubscribers.has(userId)) {
+      this.activeUnsubscribers.get(userId)!();
+      this.activeUnsubscribers.delete(userId);
+    }
+
     const path = 'bookings';
     try {
       const q = query(collection(db, path), where('userId', '==', userId));
-      onSnapshot(q, (snapshot) => {
+      const unsubscribe = onSnapshot(q, (snapshot) => {
         const firestoreTickets: ElectronicTicket[] = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
@@ -67,13 +80,42 @@ export class FirebaseSyncService {
           firestoreTickets.forEach((t) => mergedMap.set(t.id, t));
           
           appStore.getState().tickets = Array.from(mergedMap.values());
+          if (onUpdateCallback) {
+            onUpdateCallback(firestoreTickets);
+          }
         }
       }, (error) => {
+        console.warn('Firestore snapshot listener error (graceful fallback):', error.message);
         handleFirestoreError(error, OperationType.GET, path);
       });
+
+      this.activeUnsubscribers.set(userId, unsubscribe);
+      return () => {
+        unsubscribe();
+        this.activeUnsubscribers.delete(userId);
+      };
     } catch (error) {
       console.warn('Firestore syncUserTickets offline/unavailable:', error);
+      return () => {};
     }
+  }
+
+  /**
+   * Explicitly unsubscribe all listeners (screen exit, logout)
+   */
+  public static unsubscribeAll(): void {
+    for (const [key, unsub] of this.activeUnsubscribers.entries()) {
+      try {
+        unsub();
+      } catch (err) {
+        console.warn('Error unsubscribing listener:', key, err);
+      }
+    }
+    this.activeUnsubscribers.clear();
+  }
+
+  public static getActiveListenerCount(): number {
+    return this.activeUnsubscribers.size;
   }
 
   /**

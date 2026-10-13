@@ -155,9 +155,9 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       });
     }
 
-    // 5. Call Gemini 3.5 Flash with 12s Timeout Protection
+    // 5. Call Gemini 3.8 Flash with 12s Timeout Protection
     const generatePromise = ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-3.8-flash',
       contents: contents as any,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,

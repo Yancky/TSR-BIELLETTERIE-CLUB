@@ -10,6 +10,7 @@ import { FleetService } from '../services/fleetService';
 import { TripService } from '../services/tripService';
 import { AuditService } from '../services/auditService';
 import { CompanyRegistrationInput, User } from '../types';
+import { TODAY_DATE_STR } from '../services/mockData';
 
 export function runPhase3Tests(): { passed: number; failed: number; tests: string[] } {
   const testResults: string[] = [];
@@ -363,7 +364,7 @@ export function runPhase3Tests(): { passed: number; failed: number; tests: strin
         arrivalAgency: 'Gare Koudougou',
         departureTime: '08:00', // Conflit direct avec 06:30-11:45
         arrivalTime: '09:45',
-        date: '2026-10-11',
+        date: TODAY_DATE_STR,
         priceXOF: 2500
       });
     }, /Conflit de rotation|programmé/i);
@@ -402,7 +403,7 @@ export function runPhase3Tests(): { passed: number; failed: number; tests: strin
     const results = TripService.searchTrips({
       departureCity: 'Ouagadougou',
       destinationCity: 'Bobo-Dioulasso',
-      date: '2026-10-11'
+      date: TODAY_DATE_STR
     });
     assert.ok(results.length >= 2, 'Doit retourner les départs programmés Ouaga-Bobo du jour');
     assert.ok(results.every(t => t.departureCity === 'Ouagadougou' && t.destinationCity === 'Bobo-Dioulasso'));

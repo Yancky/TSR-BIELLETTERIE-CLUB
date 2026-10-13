@@ -386,6 +386,8 @@ export const INITIAL_ROUTES: Route[] = [
   }
 ];
 
+export const TODAY_DATE_STR = new Date().toISOString().split('T')[0];
+
 export const INITIAL_TRIPS: DepartureTrip[] = [
   {
     id: 'trip_01',
@@ -400,7 +402,7 @@ export const INITIAL_TRIPS: DepartureTrip[] = [
     arrivalAgencyId: 'ag_bobo_farakan',
     departureTime: '06:30',
     arrivalTime: '11:45',
-    date: '2026-10-11',
+    date: TODAY_DATE_STR,
     priceXOF: 9000,
     busType: 'Car Climatise VIP 50 Places',
     amenities: ['Climatisation', 'Wi-Fi 4G', 'Prises USB', 'Eau Minérale', 'TV HD'],
@@ -423,7 +425,7 @@ export const INITIAL_TRIPS: DepartureTrip[] = [
     arrivalAgencyId: 'ag_bobo_farakan',
     departureTime: '08:00',
     arrivalTime: '13:15',
-    date: '2026-10-11',
+    date: TODAY_DATE_STR,
     priceXOF: 7500,
     busType: 'Car Confort Express 54 Places',
     amenities: ['Climatisation', 'TV Vidéo', 'Soutes Sécurisées'],
@@ -446,7 +448,7 @@ export const INITIAL_TRIPS: DepartureTrip[] = [
     arrivalAgencyId: 'ag_bobo_farakan',
     departureTime: '13:30',
     arrivalTime: '18:45',
-    date: '2026-10-11',
+    date: TODAY_DATE_STR,
     priceXOF: 9000,
     busType: 'Car Climatise VIP 50 Places',
     amenities: ['Climatisation', 'Wi-Fi 4G', 'Prises USB', 'Collations'],
@@ -469,7 +471,7 @@ export const INITIAL_TRIPS: DepartureTrip[] = [
     arrivalAgencyId: 'ag_koudougou',
     departureTime: '07:30',
     arrivalTime: '09:15',
-    date: '2026-10-11',
+    date: TODAY_DATE_STR,
     priceXOF: 2500,
     busType: 'Navette Confort 35 Places',
     amenities: ['Ventilation', 'Grandes Soutes'],
@@ -492,7 +494,7 @@ export const INITIAL_TRIPS: DepartureTrip[] = [
     arrivalAgencyId: 'ag_ouaga_centre',
     departureTime: '07:00',
     arrivalTime: '12:15',
-    date: '2026-10-11',
+    date: TODAY_DATE_STR,
     priceXOF: 9000,
     busType: 'Car Climatise VIP 50 Places',
     amenities: ['Climatisation', 'Wi-Fi 4G', 'Prises USB'],
@@ -515,7 +517,7 @@ export const INITIAL_TRIPS: DepartureTrip[] = [
     arrivalAgencyId: 'ag_ouahi_centre',
     departureTime: '09:00',
     arrivalTime: '12:30',
-    date: '2026-10-11',
+    date: TODAY_DATE_STR,
     priceXOF: 4500,
     busType: 'Car Interurbain 50 Places',
     amenities: ['Climatisation', 'Bagages Inclus'],

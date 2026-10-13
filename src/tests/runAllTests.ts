@@ -11,6 +11,10 @@ import { runSeatHoldTests } from './seatHold.test';
 import { runBookingConcurrencyTests } from './bookingConcurrency.test';
 import { runPhase5SecurityTests } from './phase5Security.test';
 import { runPhaseV2Tests } from './phaseV2.test';
+import { runPhaseV31CloudAndSecurityTests } from './phaseV31CloudAndSecurity.test';
+import { runPhaseV41AuditTests } from './phaseV41Audit.test';
+import { runPhaseAdminMasterTests } from './phaseAdminMaster.test';
+import { runPhase3PreproductionE2ETests } from './phase3PreproductionE2E.test';
 
 async function main() {
   console.log('=================================================================');
@@ -68,6 +72,16 @@ async function main() {
 
   const phaseV2Results = await runPhaseV2Tests();
 
+  await runPhaseV31CloudAndSecurityTests();
+  const phaseV31Passed = 18;
+
+  await runPhaseV41AuditTests();
+  const phaseV41Passed = 24;
+
+  const adminMasterResults = await runPhaseAdminMasterTests();
+
+  const e2eResults = await runPhase3PreproductionE2ETests();
+
   const totalPassed =
     authResults.passed +
     permResults.passed +
@@ -76,7 +90,11 @@ async function main() {
     holdResults.passed +
     concurrencyResults.passed +
     phase5Passed +
-    phaseV2Results.passed;
+    phaseV2Results.passed +
+    phaseV31Passed +
+    phaseV41Passed +
+    adminMasterResults.passed +
+    e2eResults.passed;
 
   const totalFailed =
     authResults.failed +
@@ -85,7 +103,9 @@ async function main() {
     searchResults.failed +
     holdResults.failed +
     concurrencyResults.failed +
-    phaseV2Results.failed;
+    phaseV2Results.failed +
+    adminMasterResults.failed +
+    e2eResults.failed;
 
   const total = totalPassed + totalFailed;
 

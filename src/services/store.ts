@@ -2,6 +2,7 @@ import { Agency, AppNotification, BookingOrder, Company, DepartureTrip, Electron
 import { DEMO_USERS, INITIAL_AGENCIES, INITIAL_COMPANIES, INITIAL_NOTIFICATIONS, INITIAL_TRIPS } from './mockData';
 import { FirebaseSyncService } from './firebaseSyncService';
 import { signQrPayload, verifyQrSignature } from './ticketService';
+import { AuditService } from './auditService';
 
 // Local storage keys
 const STORAGE_PREFIX = 'tsr_transit_v1_';
@@ -587,6 +588,41 @@ class Store {
     const trip = this.state.trips.find(t => t.id === tripId);
     if (trip) {
       trip.status = status;
+      this.notify();
+    }
+  }
+
+  public updateUserStatus(userId: string, status: UserProfile['status']): void {
+    const user = this.state.allUsers.find(u => u.id === userId);
+    if (user) {
+      user.status = status;
+      user.updatedAt = new Date().toISOString().split('T')[0];
+      this.notify();
+    }
+  }
+
+  public updateUserRole(userId: string, role: UserProfile['role']): void {
+    const user = this.state.allUsers.find(u => u.id === userId);
+    if (user) {
+      user.role = role;
+      user.updatedAt = new Date().toISOString().split('T')[0];
+      this.notify();
+    }
+  }
+
+  public updateTicketStatus(ticketId: string, status: ElectronicTicket['status']): void {
+    const ticket = this.state.tickets.find(t => t.id === ticketId || t.ticketNumber === ticketId);
+    if (ticket) {
+      ticket.status = status;
+      this.saveItem('tickets', this.state.tickets);
+      this.notify();
+    }
+  }
+
+  public updateBookingStatus(bookingId: string, status: BookingOrder['status']): void {
+    const booking = this.state.bookings.find(b => b.id === bookingId || b.bookingRef === bookingId);
+    if (booking) {
+      booking.status = status;
       this.notify();
     }
   }

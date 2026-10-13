@@ -4,6 +4,7 @@
  */
 
 import { ParcelCategory, ParcelShipment, ParcelStatus } from '../types';
+import { AuditService } from './auditService';
 
 export const INITIAL_PARCELS: ParcelShipment[] = [
   {
@@ -170,6 +171,9 @@ export class ParcelService {
       shippingFeeXOF: fee,
       status: 'REGISTERED',
       pickupOtpCode: otpCode,
+      otpExpiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+      failedOtpAttempts: 0,
+      isLocked: false,
       createdAt: now,
       updatedAt: now,
       history: [
@@ -202,7 +206,7 @@ export class ParcelService {
   }
 
   /**
-   * Mise à jour de statut par un agent de gare
+   * Mise à jour de statut par un agent de gare avec contrôles de sécurité OTP stricts
    */
   public static updateParcelStatus(params: {
     trackingNumber: string;
@@ -216,10 +220,53 @@ export class ParcelService {
       return { success: false, message: 'Colis introuvable avec ce numéro de suivi.' };
     }
 
+    // 1. Contrôle anti-bruteforce : colis verrouillé
+    if (parcel.isLocked) {
+      return {
+        success: false,
+        message: 'COLIS_VERROUILLE: Colis verrouillé suite à 3 tentatives OTP infructueuses. Présentation en agence requise.'
+      };
+    }
+
+    // 2. Contrôle de date d'expiration de l'OTP
+    if (parcel.otpExpiresAt && Date.now() > new Date(parcel.otpExpiresAt).getTime()) {
+      return {
+        success: false,
+        message: 'OTP_EXPIRE: Le code secret de retrait a expiré. Veuillez contacter le guichet fret pour régularisation.'
+      };
+    }
+
+    // 3. Validation sécurisée du code OTP pour la livraison
     if (params.newStatus === 'DELIVERED') {
       if (!params.otpCode || params.otpCode.trim() !== parcel.pickupOtpCode) {
-        return { success: false, message: 'Code secret de retrait (OTP) invalide ou erroné.' };
+        const attempts = (parcel.failedOtpAttempts || 0) + 1;
+        parcel.failedOtpAttempts = attempts;
+
+        if (attempts >= 3) {
+          parcel.isLocked = true;
+          AuditService.log({
+            actorId: 'agent_quai',
+            actorRole: 'AGENT',
+            action: 'SECURITY_QR_FORGERY_DETECTED',
+            resourceType: 'SYSTEM',
+            targetId: parcel.trackingNumber,
+            result: 'FAILURE',
+            details: `Alerte Brute-Force OTP : 3 tentatives échouées sur le colis ${parcel.trackingNumber}. Verrouillage de sécurité activé.`
+          });
+          return {
+            success: false,
+            message: 'ALERTE_SECURITE: 3 tentatives erronées. Le colis est désormais verrouillé contre les essais successifs.'
+          };
+        }
+
+        return {
+          success: false,
+          message: `Code secret de retrait (OTP) erroné. Tentative ${attempts}/3 avant verrouillage de sécurité.`
+        };
       }
+
+      // Code correct : réinitialisation du compteur d'erreurs
+      parcel.failedOtpAttempts = 0;
     }
 
     const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
