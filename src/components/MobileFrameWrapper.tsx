@@ -34,11 +34,12 @@ export const MobileFrameWrapper: React.FC<MobileFrameWrapperProps> = ({
   };
 
   if (!isMobileFrame) {
+    const isAdmin = screenTitle?.includes('17') || screenTitle?.includes('Admin');
     // Full width web experience
     return (
-      <div className="pt-14 min-h-screen bg-slate-100 flex flex-col items-center">
-        <div className="w-full max-w-4xl min-h-[calc(100vh-3.5rem)] bg-white shadow-md flex flex-col">
-          {screenTitle && (
+      <div className={`pt-14 min-h-screen ${isAdmin ? 'bg-[#eef1f6]' : 'bg-slate-100'} flex flex-col items-center`}>
+        <div className={`w-full ${isAdmin ? 'max-w-full' : 'max-w-4xl'} min-h-[calc(100vh-3.5rem)] bg-white shadow-md flex flex-col`}>
+          {screenTitle && !isAdmin && (
             <div className="bg-[#0F2C59] text-white px-6 py-3.5 flex items-center justify-between border-b border-blue-900 sticky top-12 z-30">
               <div className="flex items-center gap-3">
                 {showBack && (
@@ -121,6 +122,19 @@ export const MobileFrameWrapper: React.FC<MobileFrameWrapperProps> = ({
                   <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-amber-400 rounded-full ring-2 ring-[#0F2C59]" />
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Quick banner for admin dashboard in mobile frame */}
+          {(screenTitle?.includes('17') || screenTitle?.includes('Admin')) && (
+            <div className="bg-amber-400 text-slate-950 px-3 py-1.5 text-[11px] font-semibold flex items-center justify-between shrink-0 border-b border-amber-500 shadow-sm">
+              <span>🖥️ Tableau de Bord Web Admin</span>
+              <button
+                onClick={() => appStore.toggleMobileFrame()}
+                className="bg-[#0F2C59] text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-blue-900 transition-colors"
+              >
+                Passer en Vue Large &rarr;
+              </button>
             </div>
           )}
 

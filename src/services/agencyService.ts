@@ -66,7 +66,7 @@ export class AgencyService {
     // 4. Unicité du code d'agence dans le périmètre de la compagnie
     const cleanCode = input.code.trim().toUpperCase();
     const duplicate = Array.from(this.agencies.values()).find(
-      a => a.companyId === input.companyId && a.code.toUpperCase() === cleanCode
+      a => a.companyId === input.companyId && a.code?.toUpperCase() === cleanCode
     );
     if (duplicate) {
       throw new Error(`Le code d'agence '${cleanCode}' est déjà utilisé au sein de votre compagnie.`);
@@ -132,7 +132,7 @@ export class AgencyService {
     if (updates.code) {
       const cleanCode = updates.code.trim().toUpperCase();
       const duplicate = Array.from(this.agencies.values()).find(
-        a => a.id !== agencyId && a.companyId === agency.companyId && a.code.toUpperCase() === cleanCode
+        a => a.id !== agencyId && a.companyId === agency.companyId && a.code?.toUpperCase() === cleanCode
       );
       if (duplicate) {
         throw new Error(`Le code d'agence '${cleanCode}' est déjà utilisé.`);

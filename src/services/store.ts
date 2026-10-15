@@ -1,5 +1,5 @@
-import { Agency, AppNotification, BookingOrder, Company, DepartureTrip, ElectronicTicket, PaymentTransaction, ScreenId, SeatHold, UserProfile } from '../types';
-import { DEMO_USERS, INITIAL_AGENCIES, INITIAL_COMPANIES, INITIAL_NOTIFICATIONS, INITIAL_TRIPS } from './mockData';
+import { Agency, AppNotification, BookingOrder, Bus, Company, DepartureTrip, ElectronicTicket, PaymentTransaction, Route, ScheduledDeparture, ScreenId, SeatHold, Station, Trip, UserProfile } from '../types';
+import { DEMO_USERS, INITIAL_AGENCIES, INITIAL_BUSES, INITIAL_COMPANIES, INITIAL_NOTIFICATIONS, INITIAL_ROUTES, INITIAL_TRIPS } from './mockData';
 import { FirebaseSyncService } from './firebaseSyncService';
 import { signQrPayload, verifyQrSignature } from './ticketService';
 import { AuditService } from './auditService';
@@ -17,9 +17,11 @@ export interface AppState {
   currentUser: UserProfile | null;
   allUsers: UserProfile[];
 
-  // Companies & Agencies
+  // Companies & Agencies & Network
   companies: Company[];
   agencies: Agency[];
+  routes: Route[];
+  buses: Bus[];
 
   // Trips & Search
   trips: DepartureTrip[];
@@ -113,6 +115,8 @@ class Store {
       allUsers: DEMO_USERS,
       companies: INITIAL_COMPANIES,
       agencies: INITIAL_AGENCIES,
+      routes: INITIAL_ROUTES,
+      buses: INITIAL_BUSES,
       trips: INITIAL_TRIPS,
       searchDepartureCity: 'Ouagadougou',
       searchDestinationCity: 'Bobo-Dioulasso',
@@ -568,16 +572,205 @@ class Store {
     }
   }
 
+  public addCompany(companyData: Partial<Company> & { name: string; tradeName: string }): Company {
+    const newCompany: Company = {
+      id: companyData.id || `comp_${Date.now()}`,
+      name: companyData.name,
+      tradeName: companyData.tradeName,
+      logoUrl: companyData.logoUrl,
+      headquarters: companyData.headquarters || 'Ouagadougou',
+      city: companyData.city || 'Ouagadougou',
+      region: companyData.region || 'Centre',
+      country: companyData.country || 'Burkina Faso',
+      phone: companyData.phone || '+226 25 00 00 00',
+      whatsapp: companyData.whatsapp || '+226 70 00 00 00',
+      managerName: companyData.managerName || 'Directeur Général',
+      managerEmail: companyData.managerEmail || 'contact@compagnie.bf',
+      managerRole: companyData.managerRole || 'Directeur Général',
+      managerAccountId: companyData.managerAccountId,
+      ifuNumber: companyData.ifuNumber || '00012345X',
+      rccmNumber: companyData.rccmNumber || 'BF-OUA-2026-B-0000',
+      companyType: companyData.companyType || 'SARL',
+      description: companyData.description || 'Société de transport interurbain partenaire de TSR Transit.',
+      merchantCode: companyData.merchantCode,
+      servedCities: companyData.servedCities || ['Ouagadougou', 'Bobo-Dioulasso'],
+      status: companyData.status || 'ACTIVE',
+      fleetCount: companyData.fleetCount ?? 1,
+      rating: companyData.rating ?? 5.0,
+      createdAt: companyData.createdAt || new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0]
+    };
+    this.state.companies.unshift(newCompany);
+    this.notify();
+    return newCompany;
+  }
+
+  public updateCompany(companyId: string, updates: Partial<Company>): Company | null {
+    const comp = this.state.companies.find(c => c.id === companyId);
+    if (comp) {
+      Object.assign(comp, updates, { updatedAt: new Date().toISOString().split('T')[0] });
+      this.notify();
+      return comp;
+    }
+    return null;
+  }
+
+  // --- Agency / Gare Management ---
+  public addAgency(agencyData: Partial<Agency> & { companyId: string; name: string; city: string; address: string }): Agency {
+    const now = new Date().toISOString();
+    const newAgency: Agency = {
+      id: agencyData.id || `ag_${Date.now()}`,
+      companyId: agencyData.companyId,
+      name: agencyData.name,
+      code: agencyData.code || `AG-${agencyData.city.slice(0, 3).toUpperCase()}-${Math.floor(Math.random() * 90 + 10)}`,
+      neighborhood: agencyData.neighborhood || agencyData.city,
+      address: agencyData.address,
+      city: agencyData.city,
+      region: agencyData.region || 'Centre',
+      latitude: agencyData.latitude ?? 12.3686,
+      longitude: agencyData.longitude ?? -1.5271,
+      lat: agencyData.latitude ?? 12.3686,
+      lng: agencyData.longitude ?? -1.5271,
+      phone: agencyData.phone || '+226 25 00 00 00',
+      openingHours: agencyData.openingHours || '05h30 - 22h00',
+      supportedDestinations: agencyData.supportedDestinations || ['Bobo-Dioulasso', 'Ouagadougou'],
+      status: agencyData.status || 'ACTIVE',
+      createdAt: agencyData.createdAt || now,
+      updatedAt: now
+    };
+    this.state.agencies.unshift(newAgency);
+    this.notify();
+    return newAgency;
+  }
+
+  public updateAgency(agencyId: string, updates: Partial<Agency>): Agency | null {
+    const ag = this.state.agencies.find(a => a.id === agencyId);
+    if (ag) {
+      Object.assign(ag, updates, { updatedAt: new Date().toISOString() });
+      if (updates.latitude !== undefined) ag.lat = updates.latitude;
+      if (updates.longitude !== undefined) ag.lng = updates.longitude;
+      this.notify();
+      return ag;
+    }
+    return null;
+  }
+
+  public updateAgencyStatus(agencyId: string, status: Agency['status']): void {
+    const ag = this.state.agencies.find(a => a.id === agencyId);
+    if (ag) {
+      ag.status = status;
+      ag.updatedAt = new Date().toISOString();
+      this.notify();
+    }
+  }
+
+  // --- Route / Ligne Management ---
+  public addRoute(routeData: Partial<Route> & { companyId: string; departureCity: string; destinationCity: string }): Route {
+    const now = new Date().toISOString();
+    const newRoute: Route = {
+      id: routeData.id || `route_${Date.now()}`,
+      companyId: routeData.companyId,
+      departureCity: routeData.departureCity,
+      destinationCity: routeData.destinationCity,
+      departureAgencyId: routeData.departureAgencyId,
+      arrivalAgencyId: routeData.arrivalAgencyId,
+      departureAgencyName: routeData.departureAgencyName,
+      arrivalAgencyName: routeData.arrivalAgencyName,
+      estimatedDurationMinutes: routeData.estimatedDurationMinutes || 300,
+      distanceKm: routeData.distanceKm || 360,
+      basePriceXOF: routeData.basePriceXOF || 9000,
+      stops: routeData.stops || [],
+      status: routeData.status || 'ACTIVE',
+      createdAt: now,
+      updatedAt: now
+    };
+    this.state.routes.unshift(newRoute);
+    this.notify();
+    return newRoute;
+  }
+
+  public updateRoute(routeId: string, updates: Partial<Route>): Route | null {
+    const r = this.state.routes.find(item => item.id === routeId);
+    if (r) {
+      Object.assign(r, updates, { updatedAt: new Date().toISOString() });
+      this.notify();
+      return r;
+    }
+    return null;
+  }
+
+  public updateRouteStatus(routeId: string, status: Route['status']): void {
+    const r = this.state.routes.find(item => item.id === routeId);
+    if (r) {
+      r.status = status;
+      r.updatedAt = new Date().toISOString();
+      this.notify();
+    }
+  }
+
+  // --- Bus / Véhicule Management ---
+  public addBus(busData: Partial<Bus> & { companyId: string; registrationNumber: string; seatCapacity: number }): Bus {
+    const now = new Date().toISOString();
+    const newBus: Bus = {
+      id: busData.id || `bus_${Date.now()}`,
+      companyId: busData.companyId,
+      agencyId: busData.agencyId,
+      registrationNumber: busData.registrationNumber,
+      registrationPlate: busData.registrationNumber,
+      fleetNumber: busData.fleetNumber || `CAR-${Math.floor(Math.random() * 90 + 10)}`,
+      brand: busData.brand || 'Marcopolo',
+      model: busData.model || 'Paradiso G8',
+      manufactureYear: busData.manufactureYear || 2024,
+      seatCapacity: busData.seatCapacity || 50,
+      totalSeats: busData.seatCapacity || 50,
+      seatLayout: busData.seatLayout || '2x2',
+      category: busData.category || 'VIP',
+      amenities: busData.amenities || ['Climatisation', 'Wi-Fi 4G', 'Prises USB'],
+      status: busData.status || 'ACTIVE',
+      createdAt: now,
+      updatedAt: now
+    };
+    this.state.buses.unshift(newBus);
+    const comp = this.state.companies.find(c => c.id === busData.companyId);
+    if (comp) comp.fleetCount = (comp.fleetCount || 0) + 1;
+    this.notify();
+    return newBus;
+  }
+
+  public updateBus(busId: string, updates: Partial<Bus>): Bus | null {
+    const b = this.state.buses.find(item => item.id === busId);
+    if (b) {
+      Object.assign(b, updates, { updatedAt: new Date().toISOString() });
+      if (updates.registrationNumber) b.registrationPlate = updates.registrationNumber;
+      if (updates.seatCapacity) b.totalSeats = updates.seatCapacity;
+      this.notify();
+      return b;
+    }
+    return null;
+  }
+
+  public updateBusStatus(busId: string, status: Bus['status']): void {
+    const b = this.state.buses.find(item => item.id === busId);
+    if (b) {
+      b.status = status;
+      b.updatedAt = new Date().toISOString();
+      this.notify();
+    }
+  }
+
   // --- Trips Management ---
-  public addTrip(tripData: Omit<DepartureTrip, 'id' | 'availableSeatsCount' | 'status' | 'createdAt' | 'updatedAt'>): DepartureTrip {
+  public addTrip(tripData: Partial<DepartureTrip> & { companyId: string; departureCity: string; destinationCity: string; departureAgency: string; arrivalAgency: string; departureTime: string; arrivalTime: string; date: string; priceXOF: number; busType: string; totalSeats: number }): DepartureTrip {
     const now = new Date().toISOString();
     const newTrip: DepartureTrip = {
       ...tripData,
-      id: `trip_${Date.now()}`,
-      availableSeatsCount: tripData.totalSeats,
-      status: 'PUBLISHED',
-      createdAt: now,
-      updatedAt: now
+      id: tripData.id || `trip_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      amenities: tripData.amenities || ['Climatisation', 'Prises USB'],
+      availableSeatsCount: tripData.availableSeatsCount !== undefined ? tripData.availableSeatsCount : tripData.totalSeats,
+      status: tripData.status || 'PUBLISHED',
+      price: tripData.price !== undefined ? tripData.price : tripData.priceXOF,
+      currency: 'XOF',
+      createdAt: tripData.createdAt || now,
+      updatedAt: tripData.updatedAt || now
     };
     this.state.trips.unshift(newTrip);
     this.notify();
@@ -588,8 +781,19 @@ class Store {
     const trip = this.state.trips.find(t => t.id === tripId);
     if (trip) {
       trip.status = status;
+      trip.updatedAt = new Date().toISOString();
       this.notify();
     }
+  }
+
+  public updateTrip(tripId: string, updates: Partial<DepartureTrip>): DepartureTrip | null {
+    const trip = this.state.trips.find(t => t.id === tripId);
+    if (trip) {
+      Object.assign(trip, updates, { updatedAt: new Date().toISOString() });
+      this.notify();
+      return trip;
+    }
+    return null;
   }
 
   public updateUserStatus(userId: string, status: UserProfile['status']): void {
@@ -641,6 +845,53 @@ class Store {
       n.read = true;
     }
     this.notify();
+  }
+
+  // --- Relations et accès centralisés Station / Trip / ScheduledDeparture ---
+  public getStations(): Station[] {
+    return this.state.agencies;
+  }
+
+  public getStationsByCompany(companyId: string): Station[] {
+    return this.state.agencies.filter(s => s.companyId === companyId);
+  }
+
+  public addStation(stationData: Partial<Station> & { companyId: string; name: string; city: string; address: string }): Station {
+    return this.addAgency(stationData);
+  }
+
+  public updateStation(stationId: string, updates: Partial<Station>): Station | null {
+    return this.updateAgency(stationId, updates);
+  }
+
+  public updateStationStatus(stationId: string, status: Station['status']): void {
+    this.updateAgencyStatus(stationId, status);
+  }
+
+  public getTrips(): Trip[] {
+    return this.state.routes;
+  }
+
+  public getTripsByCompany(companyId: string): Trip[] {
+    return this.state.routes.filter(r => r.companyId === companyId);
+  }
+
+  public addTripRoute(tripData: Partial<Trip> & { companyId: string; departureCity: string; destinationCity: string }): Trip {
+    return this.addRoute(tripData);
+  }
+
+  public getScheduledDepartures(): ScheduledDeparture[] {
+    return this.state.trips;
+  }
+
+  public getScheduledDeparturesByTrip(tripId: string): ScheduledDeparture[] {
+    return this.state.trips.filter(t => t.tripId === tripId || t.routeId === tripId);
+  }
+
+  public addScheduledDeparture(
+    departureData: Omit<ScheduledDeparture, 'id' | 'availableSeatsCount' | 'status' | 'createdAt' | 'updatedAt'>
+  ): ScheduledDeparture {
+    return this.addTrip(departureData);
   }
 }
 

@@ -15,6 +15,8 @@ import { runPhaseV31CloudAndSecurityTests } from './phaseV31CloudAndSecurity.tes
 import { runPhaseV41AuditTests } from './phaseV41Audit.test';
 import { runPhaseAdminMasterTests } from './phaseAdminMaster.test';
 import { runPhase3PreproductionE2ETests } from './phase3PreproductionE2E.test';
+import { runAdminCentralManagementTests } from './adminCentralManagement.test';
+import { runPhase1ModelsRelationsTests } from './phase1ModelsRelations.test';
 
 async function main() {
   console.log('=================================================================');
@@ -82,6 +84,10 @@ async function main() {
 
   const e2eResults = await runPhase3PreproductionE2ETests();
 
+  const adminCentralResults = await runAdminCentralManagementTests();
+
+  const phase1Results = await runPhase1ModelsRelationsTests();
+
   const totalPassed =
     authResults.passed +
     permResults.passed +
@@ -94,7 +100,9 @@ async function main() {
     phaseV31Passed +
     phaseV41Passed +
     adminMasterResults.passed +
-    e2eResults.passed;
+    e2eResults.passed +
+    adminCentralResults.passed +
+    phase1Results.passed;
 
   const totalFailed =
     authResults.failed +
@@ -105,7 +113,9 @@ async function main() {
     concurrencyResults.failed +
     phaseV2Results.failed +
     adminMasterResults.failed +
-    e2eResults.failed;
+    e2eResults.failed +
+    adminCentralResults.failed +
+    phase1Results.failed;
 
   const total = totalPassed + totalFailed;
 

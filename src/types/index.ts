@@ -87,11 +87,15 @@ export type Permission =
   | 'AUDIT_LOGS_VIEW';
 
 // ==========================================
-// 3. COMPAGNIES & AGENCES
+// ==========================================
+// 3. COMPAGNIES & GARES (STATIONS / AGENCES)
 // ==========================================
 
 export type CompanyStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED';
 
+/**
+ * Entité Company — Société de transport burkinabè agréée ou candidate
+ */
 export interface Company {
   id: string;
   name: string;
@@ -122,52 +126,80 @@ export interface Company {
     transportLicenseDoc?: string;
     identityDoc?: string;
   };
+  managerAccountId?: string;
   createdAt: string;
   updatedAt?: string;
 }
 
-export type AgencyStatus = 'ACTIVE' | 'INACTIVE';
+export type StationStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
 
-export interface Agency {
+/**
+ * Entité Station — Gare ou agence physique de transport rattachée à une société
+ */
+export interface Station {
   id: string;
-  companyId: string;
+  companyId: string; // Association stricte à sa société propriétaire
   name: string;
-  code: string;
-  address: string;
   city: string;
-  region: string;
-  latitude: number;
-  longitude: number;
+  region?: string;
+  neighborhood?: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
   // Alias de compatibilité
   lat?: number;
   lng?: number;
   phone: string;
-  openingHours: string;
-  status: AgencyStatus;
+  code?: string;
+  openingHours?: string;
+  supportedDestinations?: string[];
+  status: StationStatus;
   createdAt: string;
   updatedAt: string;
 }
 
+// Rétrocompatibilité bidirectionnelle stricte avec Agency
+export type Agency = Station;
+export type AgencyStatus = StationStatus;
+
 // ==========================================
-// 4. ITINÉRAIRES, BUS & DÉPARTS
+// 4. TRAJETS (TRIPS / LIGNES), BUS & DÉPARTS PROGRAMMÉS
 // ==========================================
 
-export type RouteStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+export type TripRouteStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
 
-export interface Route {
+/**
+ * Entité Trip — Trajet commercial pérenne (Liaison / Ligne)
+ * Représente la liaison commerciale offerte par une société entre deux gares.
+ * Exemple: Société TSR, Gare de Ouagadougou -> Gare de Bobo-Dioulasso
+ */
+export interface Trip {
   id: string;
   companyId: string;
+  departureStationId?: string; // Gare de départ
+  arrivalStationId?: string;   // Gare d'arrivée
   departureCity: string;
   destinationCity: string;
-  departureAgencyId?: string;
-  arrivalAgencyId?: string;
+  departureAgencyId?: string;  // Alias rétrocompatible
+  arrivalAgencyId?: string;    // Alias rétrocompatible
+  departureAgencyName?: string;
+  arrivalAgencyName?: string;
+  departureStationName?: string;
+  arrivalStationName?: string;
   estimatedDurationMinutes: number;
   distanceKm?: number;
+  basePriceXOF?: number;
+  routeDescription?: string;
+  description?: string;
   stops?: string[];
-  status: RouteStatus;
+  status: TripRouteStatus;
   createdAt: string;
   updatedAt: string;
 }
+
+// Rétrocompatibilité avec Route
+export type Route = Trip;
+export type RouteStatus = TripRouteStatus;
 
 export type BusCategory = 'STANDARD' | 'CONFORT' | 'VIP';
 export type BusStatus = 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE';
@@ -176,6 +208,7 @@ export interface Bus {
   id: string;
   companyId: string;
   agencyId?: string;
+  stationId?: string;
   registrationNumber: string; // Ex: 11-JJ-4567 BF
   // Alias de compatibilité
   registrationPlate?: string;
@@ -193,39 +226,61 @@ export interface Bus {
   updatedAt: string;
 }
 
-export type TripStatus =
+export type ScheduledDepartureStatus =
   | 'DRAFT'
   | 'SCHEDULED'
   | 'PUBLISHED'
   | 'BOARDING'
+  | 'FULL'
   | 'DEPARTED'
   | 'COMPLETED'
   | 'CANCELLED';
 
-export interface DepartureTrip {
+/**
+ * Entité ScheduledDeparture — Occurrence calendaire d'un départ
+ * Un départ représente une occurrence précise du trajet à une date et une heure données.
+ * Exemple: Trajet Ouaga-Bobo, le 20 octobre à 06h30, Car 11-JJ-4567 BF, 50 places, tarif 9 000 FCFA
+ */
+export interface ScheduledDeparture {
   id: string;
   companyId: string;
-  routeId?: string;
-  busId?: string;
+  tripId?: string;                // Réf au Trajet pérenne (Trip / Route)
+  routeId?: string;               // Alias de compatibilité
+  departureDate?: string;         // Date au format YYYY-MM-DD
+  date: string;                   // Alias de compatibilité format YYYY-MM-DD
+  departureTime: string;          // Format "HH:mm"
+  estimatedArrivalTime?: string;  // Format "HH:mm"
+  arrivalTime: string;            // Format "HH:mm"
+  vehicleId?: string;             // Identifiant du véhicule / car affecté
+  busId?: string;                 // Alias de compatibilité
+  seatCapacity?: number;          // Capacité de places
+  totalSeats: number;             // Alias de compatibilité
+  availableSeatsCount: number;    // Sièges disponibles
+  price?: number;                 // Tarif en XOF
+  priceXOF: number;               // Alias de compatibilité en XOF
+  currency?: 'XOF';               // Devise stricte XOF
+  status: ScheduledDepartureStatus;
+  bookingOpeningTime?: string;    // Date/Heure d'ouverture des réservations
+  bookingClosingTime?: string;    // Date/Heure de clôture des réservations
+  // Champs dénormalisés pour recherche et affichage sans jointure complexe
   departureCity: string;
   destinationCity: string;
   departureAgency: string;
   arrivalAgency: string;
   departureAgencyId?: string;
   arrivalAgencyId?: string;
-  departureTime: string; // Format "HH:mm"
-  arrivalTime: string;   // Format "HH:mm"
-  date: string;          // Format "YYYY-MM-DD"
-  priceXOF: number;      // Entier positif strict en Francs CFA
+  departureStationId?: string;
+  arrivalStationId?: string;
   busType: string;
   amenities: string[];
-  totalSeats: number;
-  availableSeatsCount: number;
-  status: TripStatus;
   cancellationReason?: string;
   createdAt: string;
   updatedAt: string;
 }
+
+// Rétrocompatibilité avec DepartureTrip
+export type DepartureTrip = ScheduledDeparture;
+export type TripStatus = ScheduledDepartureStatus;
 
 export interface CompanyRegistrationInput {
   // A. Identité
@@ -460,6 +515,24 @@ export type AuditActionType =
   | 'COMPANY_REJECTED'
   | 'COMPANY_SUSPENDED'
   | 'COMPANY_REACTIVATED'
+  | 'COMPANY_UPDATED'
+  | 'AGENCY_CREATED'
+  | 'AGENCY_UPDATED'
+  | 'AGENCY_STATUS_CHANGED'
+  | 'STATION_CREATED'
+  | 'STATION_UPDATED'
+  | 'STATION_STATUS_CHANGED'
+  | 'ROUTE_CREATED'
+  | 'ROUTE_UPDATED'
+  | 'ROUTE_STATUS_CHANGED'
+  | 'TRIP_SCHEDULED'
+  | 'TRIP_STATUS_CHANGED'
+  | 'DEPARTURE_SCHEDULED'
+  | 'DEPARTURE_CANCELLED'
+  | 'DEPARTURE_PRICE_UPDATED'
+  | 'BUS_REGISTERED'
+  | 'BUS_STATUS_CHANGED'
+  | 'SETTINGS_UPDATED'
   | 'TRIP_CREATED'
   | 'TRIP_CANCELLED'
   | 'TRIP_SEARCH'
@@ -494,7 +567,13 @@ export type AuditActionType =
 export type AuditResourceType =
   | 'USER'
   | 'COMPANY'
+  | 'AGENCY'
+  | 'STATION'
+  | 'ROUTE'
   | 'TRIP'
+  | 'DEPARTURE'
+  | 'BUS'
+  | 'SETTINGS'
   | 'SEAT'
   | 'BOOKING'
   | 'PAYMENT'
